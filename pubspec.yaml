@@ -1,0 +1,24 @@
+name: svg_painter
+description: SVG Painter
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  vector_graphics_compiler: ^1.1.11+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^4.0.0
+  test: ^1.25.7
+
+flutter:
+  uses-material-design: true
