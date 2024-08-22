@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:vector_graphics_compiler/vector_graphics_compiler.dart' as vg;
+import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
+    as vector_graphics;
 import 'dart:math' as math;
 
 typedef Pair = (double, double);
@@ -16,7 +17,7 @@ class SvgPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final parsedSvg = vg.parse(
+    final parsedSvg = vector_graphics.parse(
       svg,
       enableMaskingOptimizer: false,
       enableClippingOptimizer: false,
@@ -31,15 +32,15 @@ class SvgPainter extends CustomPainter {
     for (final svgPath in svgPaths) {
       for (final command in svgPath.commands) {
         switch (command) {
-          case vg.MoveToCommand moveTo:
+          case vector_graphics.MoveToCommand moveTo:
             min = (math.min(min.$1, moveTo.x), math.min(min.$2, moveTo.y));
             max = (math.max(max.$1, moveTo.x), math.max(max.$2, moveTo.y));
             continue;
-          case vg.LineToCommand lineTo:
+          case vector_graphics.LineToCommand lineTo:
             min = (math.min(min.$1, lineTo.x), math.min(min.$2, lineTo.y));
             max = (math.max(max.$1, lineTo.x), math.max(max.$2, lineTo.y));
             continue;
-          case vg.CubicToCommand cubicTo:
+          case vector_graphics.CubicToCommand cubicTo:
             min = (
               math.min(
                 min.$1,
@@ -96,22 +97,22 @@ class SvgPainter extends CustomPainter {
     for (final svgPath in svgPaths) {
       for (final command in svgPath.commands) {
         switch (command) {
-          case vg.CloseCommand _:
+          case vector_graphics.CloseCommand _:
             path.close();
             continue;
-          case vg.MoveToCommand moveTo:
+          case vector_graphics.MoveToCommand moveTo:
             path.moveTo(
               moveTo.x * scale + translationX,
               moveTo.y * scale + translationY,
             );
             continue;
-          case vg.LineToCommand lineTo:
+          case vector_graphics.LineToCommand lineTo:
             path.lineTo(
               lineTo.x * scale + translationX,
               lineTo.y * scale + translationY,
             );
             continue;
-          case vg.CubicToCommand cubicTo:
+          case vector_graphics.CubicToCommand cubicTo:
             path.cubicTo(
               cubicTo.x1 * scale + translationX,
               cubicTo.y1 * scale + translationY,
