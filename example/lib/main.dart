@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:svg_painter/painter.dart';
+import 'package:svg_painter/svg_painter.dart';
 
 import 'svg_mocks.dart';
 

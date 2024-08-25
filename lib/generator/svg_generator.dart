@@ -6,7 +6,7 @@ import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
     as vector_graphics;
 import 'dart:math' as math;
 
-import 'entities/pair.dart';
+import '../entities/pair.dart';
 
 class SvgGenerator {
   final String source;
