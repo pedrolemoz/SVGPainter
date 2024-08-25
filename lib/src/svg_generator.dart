@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:change_case/change_case.dart';
 import 'package:path/path.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
     as vector_graphics;
@@ -10,22 +11,43 @@ import 'entities/pair.dart';
 class SvgGenerator {
   final String source;
   final String className;
+  final String widgetSuffix;
 
-  const SvgGenerator._({required this.source, required this.className});
+  String get classNameInPascalCase => className.toPascalCase();
+  String get classNameInSnakeCase => className.toSnakeCase();
 
-  factory SvgGenerator.generateFromPath(String path) {
+  String get widgetSuffixInPascalCase => widgetSuffix.toPascalCase();
+  String get widgetSuffixInSnakeCase => widgetSuffix.toSnakeCase();
+
+  String get painterName => '${classNameInPascalCase}Painter';
+  String get widgetName => '$classNameInPascalCase$widgetSuffixInPascalCase';
+  String get fileName => '$classNameInSnakeCase.dart';
+
+  SvgGenerator._({
+    required this.source,
+    required this.className,
+    String? widgetSuffix,
+  }) : widgetSuffix = widgetSuffix ?? 'Visualizer';
+
+  factory SvgGenerator.generateFromPath(String path, {String? widgetSuffix}) {
     final file = File(path);
-    return SvgGenerator.generateFromFile(file);
+    return SvgGenerator.generateFromFile(
+      file,
+    );
   }
 
-  factory SvgGenerator.generateFromFile(File file) {
+  factory SvgGenerator.generateFromFile(File file, {String? widgetSuffix}) {
     final name = file.path.split(Platform.pathSeparator).last.split('.').first;
     final source = file.readAsStringSync();
-    return SvgGenerator._(source: source, className: name);
+    return SvgGenerator._(
+      source: source,
+      className: name,
+      widgetSuffix: widgetSuffix,
+    );
   }
 
   void writeToFile(String content) {
-    final path = join(Directory.current.path, '$className.dart');
+    final path = join(Directory.current.path, fileName);
     final file = File(path);
     file.writeAsStringSync(content);
   }
@@ -130,10 +152,10 @@ class SvgGenerator {
         '',
         'import \'package:flutter/material.dart\';',
         '',
-        'class ${className}Painter extends CustomPainter {',
+        'class $painterName extends CustomPainter {',
         '  final Color color;',
         '',
-        '  const ${className}Painter({',
+        '  const $painterName({',
         '    super.repaint,',
         '    required this.color,',
         '  });',
@@ -221,10 +243,10 @@ class SvgGenerator {
 
     buffer.writeAll(
       [
-        'class ${className}Visualizer extends StatelessWidget {',
+        'class $widgetName extends StatelessWidget {',
         '  final Color? color;',
         '',
-        '  const ${className}Visualizer({',
+        '  const $widgetName({',
         '    super.key,',
         '    this.color,',
         '  });',
@@ -236,7 +258,7 @@ class SvgGenerator {
         '        final size = Size(constraints.maxWidth, constraints.maxHeight);',
         '        return CustomPaint(',
         '          size: size,',
-        '          painter: ${className}Painter(',
+        '          painter: $painterName(',
         '            color: color ?? Colors.white,',
         '          ),',
         '        );',
