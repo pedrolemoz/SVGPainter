@@ -28,21 +28,26 @@ jobs:
     - name: Compile CLI executable
       run: dart compile exe lib/cli.dart -o cli
 
+    - name: Generate version number
+      id: version
+      run: |
+        echo "VERSION=0.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT }}
       with:
-        tag_name: v0.0.1
-        release_name: Release v0.0.1
+        tag_name: v${{ steps.version.outputs.VERSION }}
+        release_name: Release v${{ steps.version.outputs.VERSION }}
         draft: false
         prerelease: false
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./cli
