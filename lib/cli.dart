@@ -27,6 +27,8 @@ void main(List<String> args) {
       ],
       '\n',
     );
+
+    return;
   }
 
   final source = results.option('source')!;
