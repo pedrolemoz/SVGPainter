@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:path/path.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
     as vector_graphics;
 import 'dart:math' as math;
@@ -5,7 +8,29 @@ import 'dart:math' as math;
 import 'entities/pair.dart';
 
 class SvgGenerator {
-  String generate({required String source, required String className}) {
+  final String source;
+  final String className;
+
+  const SvgGenerator._({required this.source, required this.className});
+
+  factory SvgGenerator.generateFromPath(String path) {
+    final file = File(path);
+    return SvgGenerator.generateFromFile(file);
+  }
+
+  factory SvgGenerator.generateFromFile(File file) {
+    final name = file.path.split(Platform.pathSeparator).last.split('.').first;
+    final source = file.readAsStringSync();
+    return SvgGenerator._(source: source, className: name);
+  }
+
+  void writeToFile(String content) {
+    final path = join(Directory.current.path, '$className.dart');
+    final file = File(path);
+    file.writeAsStringSync(content);
+  }
+
+  void generate() {
     final svg = vector_graphics.parse(
       source,
       enableMaskingOptimizer: false,
@@ -224,6 +249,6 @@ class SvgGenerator {
       '\n',
     );
 
-    return buffer.toString();
+    writeToFile(buffer.toString());
   }
 }
