@@ -12,6 +12,7 @@ class SvgGenerator {
   final String source;
   final String className;
   final String widgetSuffix;
+  final String output;
 
   String get classNameInPascalCase => className.toPascalCase();
   String get classNameInSnakeCase => className.toSnakeCase();
@@ -26,30 +27,43 @@ class SvgGenerator {
   SvgGenerator._({
     required this.source,
     required this.className,
+    String? output,
     String? widgetSuffix,
-  }) : widgetSuffix = widgetSuffix ?? 'Visualizer';
+  })  : output = output ?? Directory.current.path,
+        widgetSuffix = widgetSuffix ?? 'Visualizer';
 
-  factory SvgGenerator.generateFromPath(String path, {String? widgetSuffix}) {
+  factory SvgGenerator.generateFromPath(
+    String path, {
+    String? output,
+    String? widgetSuffix,
+  }) {
     final file = File(path);
     return SvgGenerator.generateFromFile(
       file,
+      output: output,
+      widgetSuffix: widgetSuffix,
     );
   }
 
-  factory SvgGenerator.generateFromFile(File file, {String? widgetSuffix}) {
+  factory SvgGenerator.generateFromFile(
+    File file, {
+    String? output,
+    String? widgetSuffix,
+  }) {
     final name = file.path.split(Platform.pathSeparator).last.split('.').first;
     final source = file.readAsStringSync();
     return SvgGenerator._(
       source: source,
       className: name,
+      output: output,
       widgetSuffix: widgetSuffix,
     );
   }
 
   void writeToFile(String content) {
-    final path = join(Directory.current.path, fileName);
-    final file = File(path);
-    file.writeAsStringSync(content);
+    final path = join(output, fileName);
+    Directory(output).createSync();
+    File(path).writeAsStringSync(content);
   }
 
   void generate() {
@@ -152,6 +166,36 @@ class SvgGenerator {
         '',
         'import \'package:flutter/material.dart\';',
         '',
+        'class $widgetName extends StatelessWidget {',
+        '  final Color? color;',
+        '',
+        '  const $widgetName({',
+        '    super.key,',
+        '    this.color,',
+        '  });',
+        '',
+        '  @override',
+        '  Widget build(BuildContext context) {',
+        '    return LayoutBuilder(',
+        '      builder: (context, constraints) {',
+        '        final colorScheme = Theme.of(context).colorScheme;',
+        '        final size = Size(constraints.maxWidth, constraints.maxHeight);',
+        '',
+        '        return CustomPaint(',
+        '          size: size,',
+        '          painter: $painterName(color: color ?? colorScheme.primary),',
+        '        );',
+        '      },',
+        '    );',
+        '  }',
+        '}',
+        '\n',
+      ],
+      '\n',
+    );
+
+    buffer.writeAll(
+      [
         'class $painterName extends CustomPainter {',
         '  final Color color;',
         '',
@@ -236,37 +280,6 @@ class SvgGenerator {
         '  @override',
         '  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;',
         '}',
-        '\n',
-      ],
-      '\n',
-    );
-
-    buffer.writeAll(
-      [
-        'class $widgetName extends StatelessWidget {',
-        '  final Color? color;',
-        '',
-        '  const $widgetName({',
-        '    super.key,',
-        '    this.color,',
-        '  });',
-        '',
-        '  @override',
-        '  Widget build(BuildContext context) {',
-        '    return LayoutBuilder(',
-        '      builder: (context, constraints) {',
-        '        final size = Size(constraints.maxWidth, constraints.maxHeight);',
-        '        return CustomPaint(',
-        '          size: size,',
-        '          painter: $painterName(',
-        '            color: color ?? Colors.white,',
-        '          ),',
-        '        );',
-        '      },',
-        '    );',
-        '  }',
-        '}',
-        '\n',
       ],
       '\n',
     );
