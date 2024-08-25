@@ -3,76 +3,95 @@ import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
     as vector_graphics;
 import 'dart:math' as math;
 
-typedef Pair = (double, double);
+import '../entities/pair.dart';
 
 class SvgPainter extends CustomPainter {
-  final String svg;
+  final String source;
   final Color color;
 
   const SvgPainter({
     super.repaint,
-    required this.svg,
+    required this.source,
     required this.color,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final parsedSvg = vector_graphics.parse(
-      svg,
+    final svg = vector_graphics.parse(
+      source,
       enableMaskingOptimizer: false,
       enableClippingOptimizer: false,
       enableOverdrawOptimizer: false,
     );
 
-    final svgPaths = parsedSvg.paths;
+    var min = const Pair(
+      x: double.infinity,
+      y: double.infinity,
+    );
 
-    Pair min = (double.infinity, double.infinity);
-    Pair max = (double.negativeInfinity, double.negativeInfinity);
+    var max = const Pair(
+      x: double.negativeInfinity,
+      y: double.negativeInfinity,
+    );
 
-    for (final svgPath in svgPaths) {
-      for (final command in svgPath.commands) {
+    final paths = svg.paths;
+
+    for (final path in paths) {
+      for (final command in path.commands) {
         switch (command) {
           case vector_graphics.MoveToCommand moveTo:
-            min = (math.min(min.$1, moveTo.x), math.min(min.$2, moveTo.y));
-            max = (math.max(max.$1, moveTo.x), math.max(max.$2, moveTo.y));
+            min = Pair(
+              x: math.min(min.x, moveTo.x),
+              y: math.min(min.y, moveTo.y),
+            );
+            max = Pair(
+              x: math.max(max.x, moveTo.x),
+              y: math.max(max.y, moveTo.y),
+            );
             continue;
           case vector_graphics.LineToCommand lineTo:
-            min = (math.min(min.$1, lineTo.x), math.min(min.$2, lineTo.y));
-            max = (math.max(max.$1, lineTo.x), math.max(max.$2, lineTo.y));
+            min = Pair(
+              x: math.min(min.x, lineTo.x),
+              y: math.min(min.y, lineTo.y),
+            );
+            max = Pair(
+              x: math.max(max.x, lineTo.x),
+              y: math.max(max.y, lineTo.y),
+            );
             continue;
           case vector_graphics.CubicToCommand cubicTo:
-            min = (
-              math.min(
-                min.$1,
+            min = Pair(
+              x: math.min(
+                min.x,
                 math.min(
                   math.min(cubicTo.x1, cubicTo.x2),
                   cubicTo.x3,
                 ),
               ),
-              math.min(
-                min.$2,
+              y: math.min(
+                min.y,
                 math.min(
                   math.min(cubicTo.y1, cubicTo.y2),
                   cubicTo.y3,
                 ),
-              )
+              ),
             );
 
-            max = (
-              math.max(
-                max.$1,
+            max = Pair(
+              x: math.max(
+                max.x,
                 math.max(
                   math.max(cubicTo.x1, cubicTo.x2),
                   cubicTo.x3,
                 ),
               ),
-              math.max(
-                max.$2,
+              y: math.max(
+                max.y,
                 math.max(
                   math.max(cubicTo.y1, cubicTo.y2),
                   cubicTo.y3,
                 ),
-              )
+              ),
             );
             continue;
           default:
@@ -81,39 +100,39 @@ class SvgPainter extends CustomPainter {
       }
     }
 
-    final svgWidth = max.$1 - min.$1;
-    final svgHeight = max.$2 - min.$2;
+    final svgWidth = max.x - min.x;
+    final svgHeight = max.y - min.y;
 
     final scaleX = size.width / svgWidth;
     final scaleY = size.height / svgHeight;
     final scale = math.min(scaleX, scaleY);
 
-    final translationX = (size.width - svgWidth * scale) / 2 - min.$1 * scale;
-    final translationY = (size.height - svgHeight * scale) / 2 - min.$2 * scale;
+    final translationX = (size.width - svgWidth * scale) / 2 - min.x * scale;
+    final translationY = (size.height - svgHeight * scale) / 2 - min.y * scale;
 
-    final path = Path();
+    final uiPath = Path();
     final paint = Paint()..color = color;
 
-    for (final svgPath in svgPaths) {
-      for (final command in svgPath.commands) {
+    for (final path in paths) {
+      for (final command in path.commands) {
         switch (command) {
           case vector_graphics.CloseCommand _:
-            path.close();
+            uiPath.close();
             continue;
           case vector_graphics.MoveToCommand moveTo:
-            path.moveTo(
+            uiPath.moveTo(
               moveTo.x * scale + translationX,
               moveTo.y * scale + translationY,
             );
             continue;
           case vector_graphics.LineToCommand lineTo:
-            path.lineTo(
+            uiPath.lineTo(
               lineTo.x * scale + translationX,
               lineTo.y * scale + translationY,
             );
             continue;
           case vector_graphics.CubicToCommand cubicTo:
-            path.cubicTo(
+            uiPath.cubicTo(
               cubicTo.x1 * scale + translationX,
               cubicTo.y1 * scale + translationY,
               cubicTo.x2 * scale + translationX,
@@ -128,7 +147,7 @@ class SvgPainter extends CustomPainter {
       }
     }
 
-    canvas.drawPath(path, paint);
+    canvas.drawPath(uiPath, paint);
   }
 
   @override

@@ -53,7 +53,7 @@ class SvgVisualizer extends StatelessWidget {
         return CustomPaint(
           size: size,
           painter: SvgPainter(
-            svg: svg,
+            source: svg,
             color: color ?? Colors.white,
           ),
         );
