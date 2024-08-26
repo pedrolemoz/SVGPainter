@@ -49,12 +49,14 @@ class SvgVisualizer extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final colorScheme = Theme.of(context).colorScheme;
         final size = Size(constraints.maxWidth, constraints.maxHeight);
+
         return CustomPaint(
           size: size,
           painter: SvgPainter(
             source: svg,
-            color: color ?? Colors.white,
+            color: color ?? colorScheme.primary,
           ),
         );
       },
