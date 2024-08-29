@@ -1,73 +1,63 @@
 import 'dart:io';
 
-import 'package:change_case/change_case.dart';
 import 'package:path/path.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
     as vector_graphics;
 
 import '../utils/parser_utils.dart';
+import 'file_options.dart';
+import 'generator_configuration.dart';
+import 'painter_options.dart';
+import 'widget_options.dart';
 
 class SvgGenerator {
-  final String source;
-  final String className;
-  final String widgetSuffix;
-  final String output;
+  final GeneratorConfiguration configuration;
 
-  String get classNameInPascalCase => className.toPascalCase();
-  String get classNameInSnakeCase => className.toSnakeCase();
-
-  String get widgetSuffixInPascalCase => widgetSuffix.toPascalCase();
-  String get widgetSuffixInSnakeCase => widgetSuffix.toSnakeCase();
-
-  String get painterName => '${classNameInPascalCase}Painter';
-  String get widgetName => '$classNameInPascalCase$widgetSuffixInPascalCase';
-  String get fileName => '$classNameInSnakeCase.dart';
-
-  SvgGenerator._({
-    required this.source,
-    required this.className,
-    String? output,
-    String? widgetSuffix,
-  })  : output = output ?? Directory.current.path,
-        widgetSuffix = widgetSuffix ?? 'Visualizer';
+  const SvgGenerator._({required this.configuration});
 
   factory SvgGenerator.generateFromPath(
     String path, {
-    String? output,
-    String? widgetSuffix,
+    required WidgetOptions widgetOptions,
+    required FileOptions fileOptions,
+    required PainterOptions painterOptions,
   }) {
     final file = File(path);
     return SvgGenerator.generateFromFile(
       file,
-      output: output,
-      widgetSuffix: widgetSuffix,
+      widgetOptions: widgetOptions,
+      fileOptions: fileOptions,
+      painterOptions: painterOptions,
     );
   }
 
   factory SvgGenerator.generateFromFile(
     File file, {
-    String? output,
-    String? widgetSuffix,
+    required WidgetOptions widgetOptions,
+    required FileOptions fileOptions,
+    required PainterOptions painterOptions,
   }) {
     final name = file.path.split(Platform.pathSeparator).last.split('.').first;
     final source = file.readAsStringSync();
     return SvgGenerator._(
-      source: source,
-      className: name,
-      output: output,
-      widgetSuffix: widgetSuffix,
+      configuration: GeneratorConfiguration(
+        source: source,
+        baseName: name,
+        widgetOptions: widgetOptions,
+        fileOptions: fileOptions,
+        painterOptions: painterOptions,
+      ),
     );
   }
 
   void writeToFile(String content) {
-    final path = join(output, fileName);
-    Directory(output).createSync();
+    final path = join(configuration.output, configuration.fileName);
+    Directory(configuration.output).createSync();
     File(path).writeAsStringSync(content);
   }
 
   void generate() {
     final svg = vector_graphics.parse(
-      source,
+      configuration.source,
       enableMaskingOptimizer: false,
       enableClippingOptimizer: false,
       enableOverdrawOptimizer: false,
@@ -91,10 +81,10 @@ class SvgGenerator {
         '',
         'import \'package:flutter/material.dart\';',
         '',
-        'class $widgetName extends StatelessWidget {',
+        'class ${configuration.widgetName} extends StatelessWidget {',
         '  final Color? color;',
         '',
-        '  const $widgetName({',
+        '  const ${configuration.widgetName}({',
         '    super.key,',
         '    this.color,',
         '  });',
@@ -108,7 +98,7 @@ class SvgGenerator {
         '',
         '        return CustomPaint(',
         '          size: size,',
-        '          painter: $painterName(color: color ?? colorScheme.primary),',
+        '          painter: ${configuration.painterName}(color: color ?? colorScheme.primary),',
         '        );',
         '      },',
         '    );',
@@ -121,10 +111,10 @@ class SvgGenerator {
 
     buffer.writeAll(
       [
-        'class $painterName extends CustomPainter {',
+        'class ${configuration.painterName} extends CustomPainter {',
         '  final Color color;',
         '',
-        '  const $painterName({',
+        '  const ${configuration.painterName}({',
         '    super.repaint,',
         '    required this.color,',
         '  });',
