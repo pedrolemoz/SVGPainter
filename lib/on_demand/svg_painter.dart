@@ -25,15 +25,17 @@ class SvgPainter extends CustomPainter {
 
     final paths = svg.paths;
 
-    final (max, min) = calculatePairs(paths);
-    final (svgWidth, svgHeight) = calculateSize(max, min);
+    final offsets = calculateOffsets(paths);
+    final svgSize = calculateSize(offsets.max, offsets.min);
 
-    final scaleX = size.width / svgWidth;
-    final scaleY = size.height / svgHeight;
+    final scaleX = size.width / svgSize.width;
+    final scaleY = size.height / svgSize.height;
     final scale = math.min(scaleX, scaleY);
 
-    final translationX = (size.width - svgWidth * scale) / 2 - min.x * scale;
-    final translationY = (size.height - svgHeight * scale) / 2 - min.y * scale;
+    final translationX =
+        (size.width - svgSize.width * scale) / 2 - offsets.min.dx * scale;
+    final translationY =
+        (size.height - svgSize.height * scale) / 2 - offsets.min.dy * scale;
 
     final uiPath = Path();
     final paint = Paint()..color = color;

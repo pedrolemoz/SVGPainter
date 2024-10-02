@@ -77,8 +77,8 @@ class SvgGenerator {
 
     final paths = svg.paths;
 
-    final (max, min) = calculatePairs(paths);
-    final (width, height) = calculateSize(max, min);
+    final offsets = calculateOffsets(paths);
+    final size = calculateSize(offsets.max, offsets.min);
 
     final now = DateTime.now();
 
@@ -131,12 +131,12 @@ class SvgGenerator {
         '',
         '  @override',
         '  void paint(Canvas canvas, Size size) {',
-        '    final scaleX = size.width / $width;',
-        '    final scaleY = size.height / $height;',
+        '    final scaleX = size.width / ${size.width};',
+        '    final scaleY = size.height / ${size.height};',
         '    final scale = math.min(scaleX, scaleY);',
         '',
-        '    final translationX = (size.width - $width * scale) / 2 - ${min.x} * scale;',
-        '    final translationY = (size.height - $height * scale) / 2 - ${min.y} * scale;',
+        '    final translationX = (size.width - ${size.width} * scale) / 2 - ${offsets.min.dx} * scale;',
+        '    final translationY = (size.height - ${size.height} * scale) / 2 - ${offsets.min.dy} * scale;',
         '',
         '    final path = Path();',
         '    final paint = Paint()..color = color;',

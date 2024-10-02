@@ -1,53 +1,46 @@
-import '../entities/pair.dart';
+import 'package:flutter/material.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
     as vector_graphics;
 import 'dart:math' as math;
 
-(Pair max, Pair min) calculatePairs(List<vector_graphics.Path> paths) {
-  var min = const Pair(
-    x: double.infinity,
-    y: double.infinity,
-  );
-
-  var max = const Pair(
-    x: double.negativeInfinity,
-    y: double.negativeInfinity,
-  );
+({Offset max, Offset min}) calculateOffsets(List<vector_graphics.Path> paths) {
+  var min = const Offset(double.infinity, double.infinity);
+  var max = const Offset(double.negativeInfinity, double.negativeInfinity);
 
   for (final path in paths) {
     for (final command in path.commands) {
       switch (command) {
         case vector_graphics.MoveToCommand moveTo:
-          min = Pair(
-            x: math.min(min.x, moveTo.x),
-            y: math.min(min.y, moveTo.y),
+          min = Offset(
+            math.min(min.dx, moveTo.x),
+            math.min(min.dy, moveTo.y),
           );
-          max = Pair(
-            x: math.max(max.x, moveTo.x),
-            y: math.max(max.y, moveTo.y),
+          max = Offset(
+            math.max(max.dx, moveTo.x),
+            math.max(max.dy, moveTo.y),
           );
           continue;
         case vector_graphics.LineToCommand lineTo:
-          min = Pair(
-            x: math.min(min.x, lineTo.x),
-            y: math.min(min.y, lineTo.y),
+          min = Offset(
+            math.min(min.dx, lineTo.x),
+            math.min(min.dy, lineTo.y),
           );
-          max = Pair(
-            x: math.max(max.x, lineTo.x),
-            y: math.max(max.y, lineTo.y),
+          max = Offset(
+            math.max(max.dx, lineTo.x),
+            math.max(max.dy, lineTo.y),
           );
           continue;
         case vector_graphics.CubicToCommand cubicTo:
-          min = Pair(
-            x: math.min(
-              min.x,
+          min = Offset(
+            math.min(
+              min.dx,
               math.min(
                 math.min(cubicTo.x1, cubicTo.x2),
                 cubicTo.x3,
               ),
             ),
-            y: math.min(
-              min.y,
+            math.min(
+              min.dy,
               math.min(
                 math.min(cubicTo.y1, cubicTo.y2),
                 cubicTo.y3,
@@ -55,16 +48,16 @@ import 'dart:math' as math;
             ),
           );
 
-          max = Pair(
-            x: math.max(
-              max.x,
+          max = Offset(
+            math.max(
+              max.dx,
               math.max(
                 math.max(cubicTo.x1, cubicTo.x2),
                 cubicTo.x3,
               ),
             ),
-            y: math.max(
-              max.y,
+            math.max(
+              max.dy,
               math.max(
                 math.max(cubicTo.y1, cubicTo.y2),
                 cubicTo.y3,
@@ -78,11 +71,11 @@ import 'dart:math' as math;
     }
   }
 
-  return (max, min);
+  return (max: max, min: min);
 }
 
-(double width, double height) calculateSize(Pair max, Pair min) {
-  final width = max.x - min.x;
-  final height = max.y - min.y;
-  return (width, height);
+Size calculateSize(Offset max, Offset min) {
+  final width = max.dx - min.dx;
+  final height = max.dy - min.dy;
+  return Size(width, height);
 }
