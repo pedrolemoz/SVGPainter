@@ -2,8 +2,7 @@ import 'dart:io';
 
 import 'package:change_case/change_case.dart';
 import 'package:path/path.dart';
-import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
-    as vector_graphics;
+import 'package:vector_graphics_compiler/vector_graphics_compiler.dart' as vg;
 
 import '../utils/parser_utils.dart';
 
@@ -23,7 +22,7 @@ class SvgGenerator {
   String get widgetName => '$classNameInPascalCase$widgetSuffixInPascalCase';
   String get fileName => '$classNameInSnakeCase.dart';
 
-  SvgGenerator._({
+  SvgGenerator._internal({
     required this.source,
     required this.className,
     String? output,
@@ -35,14 +34,12 @@ class SvgGenerator {
     String path, {
     String? output,
     String? widgetSuffix,
-  }) {
-    final file = File(path);
-    return SvgGenerator.generateFromFile(
-      file,
-      output: output,
-      widgetSuffix: widgetSuffix,
-    );
-  }
+  }) =>
+      SvgGenerator.generateFromFile(
+        File(path),
+        output: output,
+        widgetSuffix: widgetSuffix,
+      );
 
   factory SvgGenerator.generateFromFile(
     File file, {
@@ -51,7 +48,7 @@ class SvgGenerator {
   }) {
     final name = file.path.split(Platform.pathSeparator).last.split('.').first;
     final source = file.readAsStringSync();
-    return SvgGenerator._(
+    return SvgGenerator._internal(
       source: source,
       className: name,
       output: output,
@@ -65,93 +62,33 @@ class SvgGenerator {
     File(path).writeAsStringSync(content);
   }
 
+  String loadTemplate() {
+    final path = join(Directory.current.path, 'template', 'template.dart');
+    return File(path).readAsStringSync();
+  }
+
   void generate() {
-    final svg = vector_graphics.parse(
+    final svg = vg.parse(
       source,
       enableMaskingOptimizer: false,
       enableClippingOptimizer: false,
       enableOverdrawOptimizer: false,
     );
 
-    final buffer = StringBuffer();
-
     final paths = svg.paths;
 
     final offsets = calculateOffsets(paths);
     final size = calculateSize(offsets.max, offsets.min);
 
-    final now = DateTime.now();
-
-    buffer.writeAll(
-      [
-        '// Code generated using SVG Painter package',
-        '// Generated in ${now.toIso8601String()}',
-        '',
-        'import \'dart:math\' as math;',
-        '',
-        'import \'package:flutter/material.dart\';',
-        '',
-        'class $widgetName extends StatelessWidget {',
-        '  final Color? color;',
-        '',
-        '  const $widgetName({',
-        '    super.key,',
-        '    this.color,',
-        '  });',
-        '',
-        '  @override',
-        '  Widget build(BuildContext context) {',
-        '    return LayoutBuilder(',
-        '      builder: (context, constraints) {',
-        '        final colorScheme = Theme.of(context).colorScheme;',
-        '        final size = Size(constraints.maxWidth, constraints.maxHeight);',
-        '',
-        '        return CustomPaint(',
-        '          size: size,',
-        '          painter: $painterName(color: color ?? colorScheme.primary),',
-        '        );',
-        '      },',
-        '    );',
-        '  }',
-        '}',
-        '\n',
-      ],
-      '\n',
-    );
-
-    buffer.writeAll(
-      [
-        'class $painterName extends CustomPainter {',
-        '  final Color color;',
-        '',
-        '  const $painterName({',
-        '    super.repaint,',
-        '    required this.color,',
-        '  });',
-        '',
-        '  @override',
-        '  void paint(Canvas canvas, Size size) {',
-        '    final scaleX = size.width / ${size.width};',
-        '    final scaleY = size.height / ${size.height};',
-        '    final scale = math.min(scaleX, scaleY);',
-        '',
-        '    final translationX = (size.width - ${size.width} * scale) / 2 - ${offsets.min.dx} * scale;',
-        '    final translationY = (size.height - ${size.height} * scale) / 2 - ${offsets.min.dy} * scale;',
-        '',
-        '    final path = Path();',
-        '    final paint = Paint()..color = color;',
-        '\n',
-      ],
-      '\n',
-    );
+    final buffer = StringBuffer();
 
     for (final path in paths) {
       for (final command in path.commands) {
         switch (command) {
-          case vector_graphics.CloseCommand _:
+          case vg.CloseCommand _:
             buffer.writeln('    path.close();\n');
             continue;
-          case vector_graphics.MoveToCommand moveTo:
+          case vg.MoveToCommand moveTo:
             buffer.writeAll(
               [
                 '    path.moveTo(',
@@ -163,7 +100,7 @@ class SvgGenerator {
               '\n',
             );
             continue;
-          case vector_graphics.LineToCommand lineTo:
+          case vg.LineToCommand lineTo:
             buffer.writeAll(
               [
                 '    path.lineTo(',
@@ -175,7 +112,7 @@ class SvgGenerator {
               '\n',
             );
             continue;
-          case vector_graphics.CubicToCommand cubicTo:
+          case vg.CubicToCommand cubicTo:
             buffer.writeAll(
               [
                 '    path.cubicTo(',
@@ -197,18 +134,20 @@ class SvgGenerator {
       }
     }
 
-    buffer.writeln('    canvas.drawPath(path, paint);');
-    buffer.writeAll(
-      [
-        '  }',
-        '',
-        '  @override',
-        '  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;',
-        '}',
-      ],
-      '\n',
-    );
+    final template = loadTemplate()
+        .replaceFirst(
+          RegExp(r'\/\/\signore.+'),
+          '// Avoid modifying it by hand',
+        )
+        .replaceAll('WidgetName', widgetName)
+        .replaceAll('DateTime', DateTime.now().toIso8601String())
+        .replaceAll('PainterName', painterName)
+        .replaceAll('const svgWidth = -1', 'const svgWidth = ${size.width}')
+        .replaceAll('const svgHeight = -1', 'const svgHeight = ${size.height}')
+        .replaceAll('const dx = -1', 'const dx = ${offsets.min.dx}')
+        .replaceAll('const dy = -1', 'const dy = ${offsets.min.dy}')
+        .replaceAll('// Code generation', buffer.toString().trim());
 
-    writeToFile(buffer.toString());
+    writeToFile(template);
   }
 }
