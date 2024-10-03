@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:svg_painter/utils/parser_utils.dart';
-import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
-    as vector_graphics;
+import 'package:vector_graphics_compiler/vector_graphics_compiler.dart' as vg;
 import 'dart:math' as math;
 
 class SvgPainter extends CustomPainter {
@@ -16,7 +15,7 @@ class SvgPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final svg = vector_graphics.parse(
+    final svg = vg.parse(
       source,
       enableMaskingOptimizer: false,
       enableClippingOptimizer: false,
@@ -43,22 +42,22 @@ class SvgPainter extends CustomPainter {
     for (final path in paths) {
       for (final command in path.commands) {
         switch (command) {
-          case vector_graphics.CloseCommand _:
+          case vg.CloseCommand _:
             uiPath.close();
             continue;
-          case vector_graphics.MoveToCommand moveTo:
+          case vg.MoveToCommand moveTo:
             uiPath.moveTo(
               moveTo.x * scale + translationX,
               moveTo.y * scale + translationY,
             );
             continue;
-          case vector_graphics.LineToCommand lineTo:
+          case vg.LineToCommand lineTo:
             uiPath.lineTo(
               lineTo.x * scale + translationX,
               lineTo.y * scale + translationY,
             );
             continue;
-          case vector_graphics.CubicToCommand cubicTo:
+          case vg.CubicToCommand cubicTo:
             uiPath.cubicTo(
               cubicTo.x1 * scale + translationX,
               cubicTo.y1 * scale + translationY,
