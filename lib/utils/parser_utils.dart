@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
     as vector_graphics;
 import 'dart:math' as math;
+
+import '../entities/vector_2d.dart';
 
 ({Offset max, Offset min}) calculateOffsets(List<vector_graphics.Path> paths) {
   var min = const Offset(double.infinity, double.infinity);
